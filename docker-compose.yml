@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+    # PHP Service
+    app:
+        build: .
+        volumes:
+            - ${SYMFONY_APP_PATH}:/var/www
+        working_dir: /var/www
+        environment:
+            - COMPOSER_MEMORY_LIMIT=-1
+        networks:
+            - symfony
+    # Nginx Service
+    webserver:
+        image: nginx:latest
+        ports:
+            - 80:80
+        volumes:
+            - ${SYMFONY_APP_PATH}:/var/www
+            - ./nginx/config:/etc/nginx/conf.d/
+        networks:
+            - symfony
+    # MySQL Service
+    db:
+        image: mysql
+        command: "--default-authentication-plugin=mysql_native_password"
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+        volumes:
+            - ./.data/db:/var/lib/mysql
+        networks:
+            - symfony
+    # PHPMyAdmin Service
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        ports:
+            - 8080:80
+        depends_on:
+            - db
+        networks:
+            - symfony
+    # MailDev Service
+    mailserver:
+        image: djfarrelly/maildev
+        ports:
+            - 8001:80
+        networks:
+            - symfony
+
+networks:
+    symfony:
+        driver: bridge
